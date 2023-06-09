@@ -1,49 +1,52 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import TableComponent from './components/TableComponent.vue'
-import SearchInput from './components/SearchInput.vue';
-import InfoContainer from './components/InfoContainer.vue';
-import PaginationComponent from './components/PaginationComponent.vue';
-import { debounce } from './util/debounce';
+import SearchInput from './components/SearchInput.vue'
+import InfoContainer from './components/InfoContainer.vue'
+import PaginationComponent from './components/PaginationComponent.vue'
+import { debounce } from './util/debounce'
 
-const meta ={
+// maybe we keep this in .env file
+const baseUrl = 'https://dummyjson.com/products'
+const tableHeaders = [
+  'title',
+  'description',
+  'price',
+  'discount', //discountPercentage
+  'rating',
+  'stock',
+  'brand',
+  'category'
+]
+const defaultMeta = {
   limit: 10,
-  skip: 10,
+  skip: 0,
   total: 0
-};
-
-const limit = ref(meta.limit)
-const skip = ref(meta.skip);
-const total = ref(0);
-const search = ref('')
-const products = ref([])
-
-const loadingState = ref('loaded') // 'loading' | 'loaded' | 'error'
-const baseApiUrl = 'https://dummyjson.com/products';
-const fetchUrl = computed(() => {
-  return `${baseApiUrl}?limit=${limit.value}&skip=${skip.value}`
-})
-const searchUrl = computed(() => {
-  return `${baseApiUrl}/search?q=${search.value}&limit=${limit.value}&skip=${skip.value}`
-})
-
-
-function setMeta(meta) {
-  skip.value = meta.skip
-  total.value = meta.total
 }
+const limit = ref(defaultMeta.limit)
+const skip = ref(defaultMeta.skip)
+const total = ref(defaultMeta.total)
 
-function fetchProducts(searchQuery = '') {
+const products = ref([])
+const search = ref('')
+const loadingState = ref('loaded') // loading, loaded, error
+
+const fetchUrl = computed(() => {
+  return `${baseUrl}?limit=${limit.value}&skip=${skip.value}`
+})
+
+const searchUrl = computed(() => {
+  return `${baseUrl}/search?q=${search.value}&limit=${limit.value}`
+})
+
+const fetchProducts = (searchQuery = '') => {
   loadingState.value = 'loading'
-  const path = searchQuery ? searchUrl.value : fetchUrl.value
-  return fetch(path)
-    .then((response) => {
-      return response.json()
-    })
+  const url = searchQuery ? searchUrl.value : fetchUrl.value
+  return fetch(url)
+    .then((response) => response.json())
     .then((data) => {
       setMeta(data)
-      products.value = data?.products || []
-      return data
+      products.value = data.products
     })
     .catch((error) => {
       loadingState.value = 'error'
@@ -54,81 +57,78 @@ function fetchProducts(searchQuery = '') {
     })
 }
 
-const debouncedSearch = computed(() => {
-  return debounce((searchQuery) => {
-    fetchProducts(searchQuery)
-  }, 500)
-})
-
-onMounted(async () => {
-  await fetchProducts()
-})
-
 const handleOnChange = () => {
   fetchProducts()
 }
 
-const onInputChange = (value) => {
-  search.value = value
-  if(value === ''){
-    setMeta(meta);
+const debeouncedSearch = debounce((searchInput) => {
+  fetchProducts(searchInput)
+}, 500)
+
+const handleOnSearch = (searchInput) => {
+  search.value = searchInput
+  if (searchInput == '') {
+    setMeta(defaultMeta);
   }
-  debouncedSearch.value(value)
+  debeouncedSearch(searchInput)
 }
 
-const onMetaChange = (meta) => {
-   setMeta(meta)
-   fetchProducts()
+const setMeta = (meta) => {
+  skip.value = meta.skip || skip.value
+  total.value = meta.total || total.value
 }
 
+const hadlePagination = (meta) => {
+  setMeta(meta)
+  fetchProducts()
+}
+
+onMounted(async () => {
+  await fetchProducts()
+})
 </script>
 
 <template>
-  <main class="container-fluid p-5">
-    <div class="container mb-4">
-      <div class="row">
-        <div class="col">
-          <select
-            v-model="limit"
-            v-on:change="handleOnChange"
-            class="form-select"
-            aria-label="Default select example"
-          >
-            <option selected value="10">10</option>
-            <option value="20">20</option>
-            <option value="30">30</option>
-          </select>
+  <main class="container-fluid p-4">
+    <section class="content-header">
+      <div class="container">
+        <div class="row">
+          <div class="col">
+            <select
+              v-on:change="handleOnChange"
+              class="form-select"
+              v-model="limit"
+              aria-label="Default select example"
+            >
+              <option selected value="10">10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+            </select>
+          </div>
+          <div class="col">
+            <SearchInput v-on:search="handleOnSearch"></SearchInput>
+          </div>
         </div>
-        <div class="col">
-          <SearchInput v-on:search="onInputChange" />
-        </div>
-      </div>
-    </div>
-
-    <InfoContainer v-if="search && products.length == 0">
-      <p>No products found</p>
-    </InfoContainer>
-
-    <div class="text-center p-4 loader" v-if="loadingState == 'loading'">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
-    <section v-if="loadingState == 'loaded' && products.length > 0">
-      <TableComponent :data="products" />
-      <div class="text-center mx-auto">
-        <PaginationComponent
-        :limit="limit"
-        :skip="skip"
-        :total="total"
-        v-on:meta-change="onMetaChange"
-        >
-      </PaginationComponent>
       </div>
     </section>
-    <InfoContainer v-if="loadingState == 'error'">
-      <p>Failed to laod products, please try again</p>
-      <button class="btn-primary" @click="fetchProducts">Reload</button>
-    </InfoContainer>
+    <section class="content-body">
+      <InfoContainer v-if="search && products.length == 0">
+        <p>No products found</p>
+      </InfoContainer>
+      <div class="text-center p-4 loader" v-if="loadingState == 'loading'">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+      <template v-if="products.length > 0 && loadingState == 'loaded'">
+        <table-component :headers="tableHeaders" :rows="products" />
+        <PaginationComponent
+          :limit="limit"
+          :skip="skip"
+          :total="total"
+          v-on:meta-change="hadlePagination"
+          ></PaginationComponent>
+      </template>
+    </section>
   </main>
 </template>

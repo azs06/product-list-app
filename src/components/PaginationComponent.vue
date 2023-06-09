@@ -16,38 +16,24 @@ const meta = defineProps({
     required: true
   }
 })
-
-const metaData = reactive({
-  ...meta
-})
-
-const {limit, skip, total} = toRefs(meta)
+const { limit, skip, total } = toRefs(meta)
 
 const totalPages = computed(() => {
   return Math.ceil(total.value / limit.value)
 })
 
-const computedMeta = computed(() => {
-  return {
-    limit: metaData.limit,
-    skip: metaData.skip,
-    total: metaData.total
-  }
-})
 
 const onPageSelect = (page) => {
-  metaData.limit = page * limit.value 
-  emit('meta-change', computedMeta.value)
+  console.log(page)
+  emit('meta-change', { ...meta, skip: page * limit.value })
 }
 
 const onNext = () => {
-  metaData.skip = metaData.skip + limit.value
-  emit('meta-change', computedMeta.value)
+  emit('meta-change', {...meta, skip: meta.skip + limit.value})
 }
 
 const onPrev = () => {
-  metaData.skip = metaData.skip - limit.value
-  emit('meta-change', computedMeta.value)
+  emit('meta-change', {...meta, skip: meta.skip})
 }
 const isFirstPage = computed(() => {
   return skip.value - limit.value <= 0;

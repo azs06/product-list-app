@@ -1,30 +1,31 @@
 <script setup>
-import { toRefs } from 'vue'
 import TableRow from './TableRow.vue'
+import { toRefs } from 'vue';
+
 const props = defineProps({
-  data: {
+  headers: {
+    type: Array,
+    required: true
+  },
+  rows: {
     type: Array,
     required: true
   }
 })
-const { data } = toRefs(props)
+
+const {headers, rows} = toRefs(props)
+
 </script>
+
 <template>
-  <table class="table table-light">
+  <table class="table">
     <thead>
       <tr>
-        <th scope="col">Title</th>
-        <th scope="col">Description</th>
-        <th scope="col">Price</th>
-        <th scope="col">Rating</th>
-        <th scope="col">Stock</th>
-        <th scope="col">Brand</th>
-        <th scope="col">Category</th>
-        <th scope="col">Discount</th>
+        <th v-for="(header, index) in headers" :key="index">{{ header }}</th>
       </tr>
     </thead>
     <tbody>
-      <TableRow v-for="item in data" :rowData="item" :key="item.id" />
+      <table-row v-for="(row, index) in rows" :key="index" :product="row" :headers="headers" />
     </tbody>
   </table>
 </template>

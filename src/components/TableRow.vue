@@ -1,28 +1,30 @@
 <script setup>
-import { toRefs, computed } from 'vue';
+import { toRefs, computed, h } from 'vue'
 const props = defineProps({
-  rowData: {
+  product: {
     type: Object,
+    required: true
+  },
+  headers: {
+    type: Array,
     required: true
   }
 })
-const { rowData } = toRefs(props);
 
-const description = computed(() => {
-  return rowData.value?.description?.slice(0, 25) + '...'
+const { product, headers } = toRefs(props)
+
+const computedProduct = computed(() => {
+  const rest = {...product.value}
+  Object.keys(rest).forEach(key => {
+    if (!headers.value.includes(key)) {
+      delete rest[key]
+    }
+  })  
+  return rest
 })
-
 </script>
-
 <template>
   <tr>
-    <th scope="row">{{ rowData?.title }}</th>
-    <td>{{ rowData?.description }}</td>
-    <td>{{ rowData?.price }}</td>
-    <td>{{ rowData?.rating}}</td>
-    <td> {{ rowData?.stock }} </td>
-    <td> {{ rowData?.brand }} </td>
-    <td> {{ rowData?.category }} </td>
-    <td> {{ description }} </td>
+    <td v-for="(value, key) in computedProduct" :key="key">{{ value }}</td>
   </tr>
 </template>

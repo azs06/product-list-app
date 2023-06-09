@@ -1,26 +1,31 @@
 <script setup>
-import {ref} from 'vue'
-const emit = defineEmits(['search'])
-const search = ref('')
-const onInputChange = (event) => {  
-  emit('search', event.target.value)
+import { ref, defineEmits } from "vue";
+
+const emit = defineEmits(["search"]);
+const searchQuery = ref("");
+
+
+const handleOnInput = () => {
+    emit("search", searchQuery.value);
 }
+
 const clearSearch = () => {
-  search.value = ''
-  emit('search', '')
+    searchQuery.value = "";
+    emit("search", searchQuery.value);
 }
+
 </script>
 
 <template>
-   <div class="input-group">
-        <input
-        v-model="search"
-        v-on:input="onInputChange"
-        type="search"
-        class="form-control"
-        placeholder="search product"
+  <div class="input-group mb-3">
+    <input
+      v-model="searchQuery"  
+      type="search"
+      class="form-control"
+      placeholder="Search"
+      aria-label="Search"
+      v-on:input="handleOnInput"
     />
-    <button v-if="search" @click="clearSearch" class="btn btn-outline-secondary" type="button">clear</button>
-   </div> 
-
+    <span class="input-group-text" v-on:click="clearSearch" id="basic-addon2">Clear</span>
+  </div>
 </template>
